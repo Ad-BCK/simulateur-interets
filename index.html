@@ -8,62 +8,105 @@
 
 <script> function parsePonctuels(input) { const map = {}; input.split('|').forEach(pair => { const [annee, montant] = pair.split(',').map(x => parseFloat(x)); if (!isNaN(annee) && !isNaN(montant)) map[annee] = montant; }); return map; }
 
-function simuler() { const initial = parseFloat(document.getElementById('initial').value); const fraisVersement = parseFloat(document.getElementById('fraisVersement').value) / 100; const fraisGestion = parseFloat(document.getElementById('fraisGestion').value) / 100; const fraisEntree = parseFloat(document.getElementById('fraisEntree').value) / 100; const tauxInteret = parseFloat(document.getElementById('tauxInteret').value) / 100; const tauxIndice = parseFloat(document.getElementById('tauxIndice').value) / 100; const duree = parseInt(document.getElementById('duree').value); const mensuel = parseFloat(document.getElementById('mensuel').value); const ponctuels = parsePonctuels(document.getElementById('ponctuels').value); const retraits = parsePonctuels(document.getElementById('retraits').value); const fiscalite = parseFloat(document.getElementById('fiscalite').value) / 100;
+function simuler() {
+  const initial = parseFloat(document.getElementById('initial').value);
+  const fraisVersement = parseFloat(document.getElementById('fraisVersement').value) / 100;
+  const fraisGestion = parseFloat(document.getElementById('fraisGestion').value) / 100;
+  const fraisEntree = parseFloat(document.getElementById('fraisEntree').value) / 100;
+  const tauxInteret = parseFloat(document.getElementById('tauxInteret').value) / 100;
+  const tauxIndice = parseFloat(document.getElementById('tauxIndice').value) / 100;
+  const duree = parseInt(document.getElementById('duree').value);
+  const mensuel = parseFloat(document.getElementById('mensuel').value);
+  const ponctuels = parsePonctuels(document.getElementById('ponctuels').value);
+  const retraits = parsePonctuels(document.getElementById('retraits').value);
+  const fiscalite = parseFloat(document.getElementById('fiscalite').value) / 100;
 
-let capital = initial * (1 - fraisVersement - fraisEntree); const labels = []; const data = []; const sansFraisData = []; const indiceData = []; let tableauHTML = '<tr><th>Année</th><th>Capital net (€)</th><th>Sans frais (€)</th><th>Indice (€)</th><th>Fiscalité appliquée (€)</th></tr>'; let csvContent = 'Année,Capital net (€),Sans frais (€),Indice (€),Fiscalité appliquée (€) ';
+  let capital = initial * (1 - fraisVersement - fraisEntree);
+  const labels = [];
+  const data = [];
+  const sansFraisData = [];
+  const indiceData = [];
+  const versementsMensuels = [];
+  let tableauHTML = '<tr><th>Année</th><th>Capital net (€)</th><th>Sans frais (€)</th><th>Indice (€)</th><th>Fiscalité appliquée (€)</th></tr>';
+  let csvContent = 'Année,Capital net (€),Sans frais (€),Indice (€),Fiscalité appliquée (€)
 
-let capitalSansFrais = initial; let capitalIndice = initial;
+';
 
-for (let annee = 1; annee <= duree; annee++) { for (let mois = 1; mois <= 12; mois++) { capital += mensuel * (1 - fraisVersement); capital *= (1 + tauxInteret / 12); capital *= (1 - fraisGestion / 12);
+  let capitalSansFrais = initial;
+  let capitalIndice = initial;
 
-  capitalSansFrais += mensuel;
-  capitalSansFrais *= (1 + tauxInteret / 12);
+  for (let annee = 1; annee <= duree; annee++) {
+    let versementAnnuel = 0;
+    for (let mois = 1; mois <= 12; mois++) {
+      capital += mensuel * (1 - fraisVersement);
+      versementAnnuel += mensuel;
+      capital *= (1 + tauxInteret / 12);
+      capital *= (1 - fraisGestion / 12);
 
-  capitalIndice *= (1 + tauxIndice / 12);
-}
+      capitalSansFrais += mensuel;
+      capitalSansFrais *= (1 + tauxInteret / 12);
 
-if (ponctuels[annee]) capital += ponctuels[annee] * (1 - fraisVersement);
-if (retraits[annee]) capital -= retraits[annee];
+      capitalIndice *= (1 + tauxIndice / 12);
+    }
 
-const plusValue = capital - initial;
-const fiscaliteAppliquee = plusValue > 0 ? plusValue * fiscalite : 0;
-const capitalApresFiscalite = capital - fiscaliteAppliquee;
+    if (ponctuels[annee]) capital += ponctuels[annee] * (1 - fraisVersement);
+    if (retraits[annee]) capital -= retraits[annee];
 
-labels.push(annee);
-data.push(capitalApresFiscalite.toFixed(2));
-sansFraisData.push(capitalSansFrais.toFixed(2));
-indiceData.push(capitalIndice.toFixed(2));
+    const plusValue = capital - initial;
+    const fiscaliteAppliquee = plusValue > 0 ? plusValue * fiscalite : 0;
+    const capitalApresFiscalite = capital - fiscaliteAppliquee;
 
-tableauHTML += `<tr><td>${annee}</td><td>${capitalApresFiscalite.toFixed(2)}</td><td>${capitalSansFrais.toFixed(2)}</td><td>${capitalIndice.toFixed(2)}</td><td>${fiscaliteAppliquee.toFixed(2)}</td></tr>`;
-csvContent += `${annee},${capitalApresFiscalite.toFixed(2)},${capitalSansFrais.toFixed(2)},${capitalIndice.toFixed(2)},${fiscaliteAppliquee.toFixed(2)}
+    labels.push(annee);
+    data.push(capitalApresFiscalite.toFixed(2));
+    sansFraisData.push(capitalSansFrais.toFixed(2));
+    indiceData.push(capitalIndice.toFixed(2));
+    versementsMensuels.push(versementAnnuel);
+
+    tableauHTML += `<tr><td>${annee}</td><td>${capitalApresFiscalite.toFixed(2)}</td><td>${capitalSansFrais.toFixed(2)}</td><td>${capitalIndice.toFixed(2)}</td><td>${fiscaliteAppliquee.toFixed(2)}</td></tr>`;
+    csvContent += `${annee},${capitalApresFiscalite.toFixed(2)},${capitalSansFrais.toFixed(2)},${capitalIndice.toFixed(2)},${fiscaliteAppliquee.toFixed(2)}
 
 `; }
 
-document.getElementById('resultats').innerHTML = tableauHTML;
+  document.getElementById('resultats').innerHTML = tableauHTML;
 
-                    if (window.monGraphique) {
-  window.monGraphique.destroy();
-}
-window.monGraphique = new Chart(document.getElementById('graphique'), {
-  type: 'line',
-  data: {
-    labels: labels,
-    datasets: [
-      { label: 'Capital net (€)', data: data, borderColor: 'blue', fill: false },
-      { label: 'Sans frais (€)', data: sansFraisData, borderColor: 'green', fill: false },
-      { label: 'Indice comparatif (€)', data: indiceData, borderColor: 'orange', fill: false }
-    ]
-  },
-  options: {
-    responsive: true,
-    scales: {
-      y: { beginAtZero: false }
-    }
+  if (window.monGraphique) {
+    window.monGraphique.destroy();
   }
-});
+  window.monGraphique = new Chart(document.getElementById('graphique'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Versements mensuels (€)', data: versementsMensuels, backgroundColor: 'rgba(128,128,128,0.4)', yAxisID: 'y' },
+        { label: 'Capital net (€)', data: data, type: 'line', borderColor: 'blue', fill: false, yAxisID: 'y' },
+        { label: 'Sans frais (€)', data: sansFraisData, type: 'line', borderColor: 'green', fill: false, yAxisID: 'y' },
+        { label: 'Indice comparatif (€)', data: indiceData, type: 'line', borderColor: 'orange', fill: false, yAxisID: 'y' }
+      ]
+    },
+    options: {
+      responsive: true,
+      aspectRatio: 2,
+      scales: {
+        y: {
+          beginAtZero: false,
+          position: 'left'
+        }
+      }
+    }
+  });
 
-new Chart(document.getElementById('graphique'), { type: 'line', data: { labels: labels, datasets: [ { label: 'Capital net (€)', data: data, borderColor: 'blue', fill: false }, { label: 'Sans frais (€)', data: sansFraisData, borderColor: 'green', fill: false }, { label: 'Indice comparatif (€)', data: indiceData, borderColor: 'orange', fill: false } ] }, options: { responsive: true, scales: { y: { beginAtZero: false } } } });
+  window.csvContent = csvContent;
+}
 
-window.csvContent = csvContent; }
+function exporterCSV() {
+  const blob = new Blob([window.csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.setAttribute('href', URL.createObjectURL(blob));
+  link.setAttribute('download', 'simulation_interets_composes.csv');
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 
-function exporterCSV() { const blob = new Blob([window.csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.setAttribute('href', URL.createObjectURL(blob)); link.setAttribute('download', 'simulation_interets_composes.csv'); link.style.display = 'none'; document.body.appendChild(link); link.click(); document.body.removeChild(link); } </script> </body> </html>
+</script> </body> </html>' }); const link = document.createElement('a'); link.setAttribute('href', URL.createObjectURL(blob)); link.setAttribute('download', 'simulation_interets_composes.csv'); link.style.display = 'none'; document.body.appendChild(link); link.click(); document.body.removeChild(link); } </script> </body> </html>
