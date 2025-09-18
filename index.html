@@ -41,6 +41,27 @@ csvContent += `${annee},${capitalApresFiscalite.toFixed(2)},${capitalSansFrais.t
 
 document.getElementById('resultats').innerHTML = tableauHTML;
 
+                    if (window.monGraphique) {
+  window.monGraphique.destroy();
+}
+window.monGraphique = new Chart(document.getElementById('graphique'), {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [
+      { label: 'Capital net (€)', data: data, borderColor: 'blue', fill: false },
+      { label: 'Sans frais (€)', data: sansFraisData, borderColor: 'green', fill: false },
+      { label: 'Indice comparatif (€)', data: indiceData, borderColor: 'orange', fill: false }
+    ]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: { beginAtZero: false }
+    }
+  }
+});
+
 new Chart(document.getElementById('graphique'), { type: 'line', data: { labels: labels, datasets: [ { label: 'Capital net (€)', data: data, borderColor: 'blue', fill: false }, { label: 'Sans frais (€)', data: sansFraisData, borderColor: 'green', fill: false }, { label: 'Indice comparatif (€)', data: indiceData, borderColor: 'orange', fill: false } ] }, options: { responsive: true, scales: { y: { beginAtZero: false } } } });
 
 window.csvContent = csvContent; }
